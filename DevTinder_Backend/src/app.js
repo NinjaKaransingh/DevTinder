@@ -6,8 +6,26 @@ app.get("/", (req, res) => {
   res.send("Hello from the dashboard!");
 });
 
-app.get("/hello", (req, res) => {
-  res.send("Hello hello hello");
+//This will only handle GET call to /hello
+app.get("/user", (req, res) => {
+  res.send({
+    firstName: "Karansingh B",
+    lastName: "Borde",
+  });
+});
+
+app.post("/user", (req, res) => {
+  //saving data to DB
+  res.send("Data successfully saved to the database");
+});
+
+app.delete("/user", (req, res) => {
+  res.send("User Deleted successfully");
+});
+
+//This will match all the HTTP method API calls to /hello
+app.use("/user", (req, res) => {
+  res.send("Hello from the server");
 });
 
 app.get("/test", (req, res) => {
