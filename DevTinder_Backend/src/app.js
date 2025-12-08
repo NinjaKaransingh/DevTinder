@@ -3,7 +3,7 @@ const { adminAuth, userAuth } = require("./middlewares/auth");
 
 const app = express(); // instance of express js application
 
-//This will only handle GET call to /hello
+//1. This will only handle GET call to /hello
 // app.get("/user", (req, res) => {
 //   res.send({
 //     firstName: "Karansingh B",
@@ -11,7 +11,20 @@ const app = express(); // instance of express js application
 //   });
 // });
 
-//optional routes
+//This will match all the HTTP method API calls to /hello
+// app.use("/user", (req, res) => {
+//   res.send("Hello from the server");
+// });
+
+// app.use((req, res) => {
+//   res.send("Hello from the server!");
+// });
+
+// (req, res) => { => this entire piece of code is known as request handler
+//   res.send("Hello from the server!");
+// }
+
+//2. Optional routes
 // app.get(/^\/ab?c$/, (req, res) => {
 //   // /ac or /abc
 //   res.send({
@@ -35,6 +48,7 @@ const app = express(); // instance of express js application
 //   res.send("abcd");
 // });
 
+// 3. Query(?) parameter and path parameter(/user/101)
 // app.get("/user", (req, res) => {
 //   console.log(req.query);
 //   res.send({
@@ -49,37 +63,46 @@ const app = express(); // instance of express js application
 //   res.send("Params");
 // });
 
-//This will match all the HTTP method API calls to /hello
-// app.use("/user", (req, res) => {
-//   res.send("Hello from the server");
+//4. Middlewares
+// a.
+// app.use("/admin", adminAuth);
+
+// app.get("/admin/getAllData", (req, res) => {
+//   res.send("All Data Sent");
 // });
 
-// app.use((req, res) => {
-//   res.send("Hello from the server!");
+// app.delete("/admin/deleteUser", (req, res) => {
+//   res.send("Deleted a user");
 // });
 
-// (req, res) => { => this entire piece of code is known as request handler
-//   res.send("Hello from the server!");
-// }
+// app.get("/user", userAuth, (req, res) => {
+//   res.send("User Data Sent");
+// });
 
-//Middlewares
+// app.get("/user/login", (req, res) => {
+//   res.send("User LoggedIn Successsfully");
+// });
 
-app.use("/admin", adminAuth);
+// b.error handling
 
-app.get("/admin/getAllData", (req, res) => {
-  res.send("All Data Sent");
+app.get("/getUserData", (req, res) => {
+  //while fetching data from db /if any code error is there then it needs to be handled gracefully
+
+  // it is good practice to have try catch block in every request route handler
+  try {
+    throw new Error("smbsdmb");
+  } catch (err) {
+    res.status(500).send("Some Error Contact Support Team!");
+  }
 });
 
-app.delete("/admin/deleteUser", (req, res) => {
-  res.send("Deleted a user");
-});
-
-app.get("/user", userAuth, (req, res) => {
-  res.send("User Data Sent");
-});
-
-app.get("/user/login", (req, res) => {
-  res.send("User LoggedIn Successsfully");
+app.use("/", (err, req, res, next) => {
+  // keep this in the end of the code
+  // If we miss try catch block then it will come to this route handler block
+  if (err) {
+    //log your error message
+    res.status(500).send("something went wrong");
+  }
 });
 
 app.listen(3000, () => {
