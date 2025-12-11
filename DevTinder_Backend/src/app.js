@@ -40,7 +40,7 @@ app.post("/signup", async (req, res) => {
 });
 app.get("/feed", async (req, res) => {
   try {
-    const users = await User.findOne({});
+    const users = await User.find({});
 
     //if we are using find method then this will return array
     // but if we are using findOne method then this will return an object
