@@ -1,110 +1,83 @@
 const express = require("express");
-const { adminAuth, userAuth } = require("./middlewares/auth");
+const connectDb = require("./config/db.js");
+const User = require("./models/user.js");
 
-const app = express(); // instance of express js application
+const app = express();
+app.use(express.json()); //this is a middleware in express that allows the server to read the JSON data sent from the client
 
-//1. This will only handle GET call to /hello
-// app.get("/user", (req, res) => {
-//   res.send({
-//     firstName: "Karansingh B",
-//     lastName: "Borde",
-//   });
-// });
+// 1. parses the JSON
+// 2. Converts it to JavaScript Object
+// 3. puts it inside req.body
 
-//This will match all the HTTP method API calls to /hello
-// app.use("/user", (req, res) => {
-//   res.send("Hello from the server");
-// });
+app.use((req, res, next) => {
+  console.log("Hi");
+  next();
+});
 
-// app.use((req, res) => {
-//   res.send("Hello from the server!");
-// });
+app.get("/", (req, res) => {
+  res.send("Connected");
+});
 
-// (req, res) => { => this entire piece of code is known as request handler
-//   res.send("Hello from the server!");
-// }
+app.post("/signup", async (req, res) => {
+  // console.log(req.body);
+  // const user = new User({
+  //   firstName: "Karansingh B",
+  //   lastName: "Borde",
+  //   age: 26,
+  //   password: "Karan@123",
+  //   gender: "Male",
+  // });
 
-//2. Optional routes
-// app.get(/^\/ab?c$/, (req, res) => {
-//   // /ac or /abc
-//   res.send({
-//     firstName: "Karansingh B",
-//     lastName: "Borde",
-//   });
-// });
+  // creating new instance of a user model
+  const user = new User(req.body);
 
-// app.get(/^\/abc\/?$/, (req, res) => {
-//   //http://localhost:3000/abc or http://localhost:3000/abc/
-//   res.send("Login");
-// });
-
-// app.get(/^\/ab+ce$/, (req, res) => {
-//   //http://localhost:3000/abbbbce -> '+' means we can add multiple b's in the url
-//   res.send("abc");
-// });
-
-// app.get("/ab*cd", (req, res) => {
-//   //absdjsndncd - it means it should start with ab and ends with cd in between we can add anything
-//   res.send("abcd");
-// });
-
-// 3. Query(?) parameter and path parameter(/user/101)
-// app.get("/user", (req, res) => {
-//   console.log(req.query);
-//   res.send({
-//     firstName: "Karansingh",
-//     lastName: "Borde",
-//   });
-// });
-
-// app.get("/user/:userId/:userName", (req, res) => {
-//   //Params
-//   console.log(req.params);
-//   res.send("Params");
-// });
-
-//4. Middlewares
-// a.
-// app.use("/admin", adminAuth);
-
-// app.get("/admin/getAllData", (req, res) => {
-//   res.send("All Data Sent");
-// });
-
-// app.delete("/admin/deleteUser", (req, res) => {
-//   res.send("Deleted a user");
-// });
-
-// app.get("/user", userAuth, (req, res) => {
-//   res.send("User Data Sent");
-// });
-
-// app.get("/user/login", (req, res) => {
-//   res.send("User LoggedIn Successsfully");
-// });
-
-// b.error handling
-
-app.get("/getUserData", (req, res) => {
-  //while fetching data from db /if any code error is there then it needs to be handled gracefully
-
-  // it is good practice to have try catch block in every request route handler
   try {
-    throw new Error("smbsdmb");
+    await user.save();
+    res.send("User details added successfully");
   } catch (err) {
-    res.status(500).send("Some Error Contact Support Team!");
+    res.status(400).send("Error while saving the details");
+  }
+});
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await User.findOne({});
+
+    //if we are using find method then this will return array
+    // but if we are using findOne method then this will return an object
+
+    // const userEmailId = req.body.emailId;
+    // try{
+
+    // const user =await User.findOne({emailId : userEmailId});
+
+    //   if(user){
+    //  res.send(user);
+    //    }
+    //   else{
+    // res.status(404).send("No user found");
+    //    }
+    // }
+
+    // catch(err){
+    // res.status(400).send("Something went wrong");
+    // }
+
+    if (users.length === 0) {
+      res.status(404).send("No user found");
+    } else {
+      res.send(users);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
   }
 });
 
-app.use("/", (err, req, res, next) => {
-  // keep this in the end of the code
-  // If we miss try catch block then it will come to this route handler block
-  if (err) {
-    //log your error message
-    res.status(500).send("something went wrong");
-  }
-});
-
-app.listen(3000, () => {
-  console.log("Server is successfully listening on port 3000");
-});
+connectDb()
+  .then(() => {
+    app.listen(3000, () => {
+      console.log("Server is listening on PORT 3000");
+    });
+  })
+  .catch((err) => {
+    console.log("Connection failed ");
+  });
