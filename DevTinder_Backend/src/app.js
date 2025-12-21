@@ -18,6 +18,7 @@ app.get("/", (req, res) => {
   res.send("Connected");
 });
 
+//To create a new user and saving it to the database
 app.post("/signup", async (req, res) => {
   // console.log(req.body);
   // const user = new User({
@@ -38,6 +39,8 @@ app.post("/signup", async (req, res) => {
     res.status(400).send("Error while saving the details");
   }
 });
+
+//To get all the users from the database
 app.get("/feed", async (req, res) => {
   try {
     const users = await User.find({});
@@ -69,6 +72,58 @@ app.get("/feed", async (req, res) => {
     }
   } catch (err) {
     res.status(400).send("Something went wrong");
+  }
+});
+
+//To delete a user from the database
+app.delete("/user/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    console.log(id);
+    const user = await User.findByIdAndDelete(id);
+    // User.findByIdAndDelete(condition, options); // It will take 2 parameters where 1st is the condition to find the document and 2nd is options object
+    // const user = await User.findByIdAndDelete({id : userId});
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      message: "User deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).send("Something went wrong");
+  }
+});
+
+//To update the user
+app.patch("/user", async (req, res) => {
+  const { userId, ...updatedData } = req.body;
+
+  console.log(updatedData);
+
+  // const user = user.findByIdAndUpdate(condition,req body,options);
+  try {
+    const user = await User.findByIdAndUpdate(userId, updatedData, {
+      new: true, // return updated document (replaced by returnDocument : true)
+      runValidators: true, // apply schema validation
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      message: "User details updated successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Something went wrong",
+      error: err.message,
+    });
   }
 });
 
