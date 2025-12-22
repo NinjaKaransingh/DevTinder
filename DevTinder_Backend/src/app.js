@@ -30,13 +30,43 @@ app.post("/signup", async (req, res) => {
   // });
 
   // creating new instance of a user model
-  const user = new User(req.body);
 
   try {
+    const { firstName, emailId, password } = req.body;
+
+    //Basic Validation
+    if (!firstName || !emailId || !password) {
+      return res.status(400).json({
+        message: "Required fields are missing",
+      });
+    }
+
+    const user = new User(req.body);
     await user.save();
-    res.send("User details added successfully");
+
+    res.status(201).json({
+      message: "User details added successfully",
+    });
   } catch (err) {
-    res.status(400).send("Error while saving the details");
+    // Duplicate key error
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "Email id already exists",
+      });
+    }
+
+    // Mongoose validation error ->
+    // Catches enum/min/required errors, Acts as final safety net
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        message: err.message,
+      });
+    }
+
+    res.status(500).json({
+      message: "Error while saving the details",
+      error: err.message,
+    });
   }
 });
 
@@ -120,6 +150,11 @@ app.patch("/user", async (req, res) => {
       user,
     });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "Email id already exists",
+      });
+    }
     res.status(500).json({
       message: "Something went wrong",
       error: err.message,
