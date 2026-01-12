@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema(
     },
     age: {
       type: Number,
-      min: 0,
+      min: 18,
     },
     emailId: {
       type: String,
@@ -28,10 +28,27 @@ const UserSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ["male", "female", "other"],
+      enum: ["male", "female", "other"], 
+      // validate(value) {
+      //   if (!["male", "female", "others"].includes(value)) {
+      //     throw new Error("Gender data is not valid");
+      //   }
+      // },
+    },
+    photoUrl: {
+      type: String,
+      default:
+        "https://ongcvidesh.com/wp-content/uploads/2019/08/dummy-image.jpg",
+    },
+    about: {
+      type: String,
+      default: "This is a default about of the user",
+    },
+    skills: {
+      tyep: [String],
     },
   },
-  { timestamps: true }
+  { timestamps: true } 
 );
 
 const User = mongoose.model("User", UserSchema);
