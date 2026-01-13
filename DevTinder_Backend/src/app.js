@@ -42,12 +42,14 @@ app.post("/signup", async (req, res) => {
     }
 
     const user = new User(req.body);
+    console.log(user);
     await user.save();
 
     res.status(201).json({
       message: "User details added successfully",
     });
   } catch (err) {
+    console.log("why")
     // Duplicate key error
     if (err.code === 11000) {
       return res.status(400).json({
@@ -132,14 +134,12 @@ app.patch("/user/:userId", async (req, res) => {
   const userId = req.params?.userId;
   const updatedData = req.body;
 
-  console.log(updatedData);
-
-  // const user = user.findByIdAndUpdate(condition,req body,options);
   try {
+    const updates = Object.keys(updatedData);
     const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
-    const isUpdateAllowed = Object.keys(updatedData).every((k) => {
-      console.log(k);
-      return ALLOWED_UPDATES.includes(k);
+    const isUpdateAllowed = updates.every((update) => {
+      console.log(update);
+      return ALLOWED_UPDATES.includes(update);
     });
 
     if (!isUpdateAllowed) {
@@ -147,6 +147,13 @@ app.patch("/user/:userId", async (req, res) => {
       throw new Error("Update not allowed");
     }
 
+    if (Array.isArray(updatedData?.skills)) {
+      if (updatedData?.skills.length > 10) {
+        throw new Error("Skills cannot be more than 10");
+      }
+    }
+
+    // const user = user.findByIdAndUpdate(condition,req body,options);
     const user = await User.findByIdAndUpdate(userId, updatedData, {
       new: true, // return updated document (replaced by returnDocument : true)
       runValidators: true, // apply schema validation
