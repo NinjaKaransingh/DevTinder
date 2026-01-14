@@ -49,7 +49,6 @@ app.post("/signup", async (req, res) => {
       message: "User details added successfully",
     });
   } catch (err) {
-    console.log("why")
     // Duplicate key error
     if (err.code === 11000) {
       return res.status(400).json({
@@ -138,12 +137,10 @@ app.patch("/user/:userId", async (req, res) => {
     const updates = Object.keys(updatedData);
     const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
     const isUpdateAllowed = updates.every((update) => {
-      console.log(update);
       return ALLOWED_UPDATES.includes(update);
     });
 
     if (!isUpdateAllowed) {
-      console.log(isUpdateAllowed);
       throw new Error("Update not allowed");
     }
 

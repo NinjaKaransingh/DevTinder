@@ -34,14 +34,20 @@ const UserSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      validate: {
-        validator: function (value) {
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(
-            value
-          );
-        },
-        message:
-          "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
+      // validate: {
+      //   validator: function (value) {
+      //     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(
+      //       value
+      //     );
+      //   },
+      //   message:
+      //     "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
+      // },
+
+      validate(value) {
+        if (!validator.isStrongPassword(value)) {
+          throw new Error("Enter a strong password");
+        }
       },
     },
     gender: {
