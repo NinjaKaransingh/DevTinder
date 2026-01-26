@@ -49,10 +49,11 @@ const UserSchema = new mongoose.Schema(
           throw new Error("Enter a strong password");
         }
       },
+      select: false, //select: false hides the password by default,
     },
     gender: {
       type: String,
-      enum: ["male", "female", "other"],
+      enum: ["male", "female", "others"],
       // validate(value) {
       //   if (!["male", "female", "others"].includes(value)) {
       //     throw new Error("Gender data is not valid");
@@ -77,7 +78,7 @@ const UserSchema = new mongoose.Schema(
       tyep: [String],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.model("User", UserSchema);

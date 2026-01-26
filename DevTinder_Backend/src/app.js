@@ -1,6 +1,14 @@
 const express = require("express");
 const connectDb = require("./config/db.js");
+const bcrypt = require("bcrypt");
 const User = require("./models/user.js");
+const {
+  validateSignUpData,
+  validateLoginData,
+} = require("./utils/validation.js");
+
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(express.json()); //this is a middleware in express that allows the server to read the JSON data sent from the client
@@ -8,6 +16,11 @@ app.use(express.json()); //this is a middleware in express that allows the serve
 // 1. parses the JSON
 // 2. Converts it to JavaScript Object
 // 3. puts it inside req.body
+
+// Parses the Cookie header from incoming HTTP requests
+
+// Attaches parsed cookies to: req.cookies -> to read the cookie
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   console.log("Hi");
@@ -20,7 +33,6 @@ app.get("/", (req, res) => {
 
 //To create a new user and saving it to the database
 app.post("/signup", async (req, res) => {
-  // console.log(req.body);
   // const user = new User({
   //   firstName: "Karansingh B",
   //   lastName: "Borde",
@@ -29,24 +41,58 @@ app.post("/signup", async (req, res) => {
   //   gender: "Male",
   // });
 
-  // creating new instance of a user model
-
   try {
-    const { firstName, emailId, password } = req.body;
+    // 1. Validation of the data like check whether firstname, lastname, age, password every each possible validation
+    validateSignUpData(req);
 
-    //Basic Validation
-    if (!firstName || !emailId || !password) {
-      return res.status(400).json({
-        message: "Required fields are missing",
-      });
-    }
+    // 2. Encrypt the password
+    // bcrypt.genSalt(10, function (err, salt) {
+    //   bcrypt.hash("Karan@123", salt, function (err, hash) {
+    //     // Store hash in your password DB.
+    //     console.log(hash);
+    //   });
+    // });
+    const {
+      firstName,
+      lastName,
+      password,
+      age,
+      gender,
+      emailId,
+      photoUrl,
+      about,
+      skills,
+    } = req.body;
 
-    const user = new User(req.body);
-    console.log(user);
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    console.log(hashedPassword);
+    //3. Creating new instance of a user model
+
+    // const user = new User(req.body); //bad way of creating a new instance
+
+    const user = new User({
+      firstName,
+      lastName,
+      password: hashedPassword,
+      age,
+      gender,
+      emailId,
+      photoUrl,
+      about,
+      skills,
+    });
     await user.save();
 
     res.status(201).json({
       message: "User details added successfully",
+      user: {
+        firstName,
+        lastName,
+        emailId,
+        age,
+        gender,
+      },
     });
   } catch (err) {
     // Duplicate key error
@@ -67,6 +113,88 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({
       message: "Error while saving the details",
       error: err.message,
+    });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    validateLoginData(req);
+
+    const { emailId, password } = req.body;
+
+    // select: false hides the password by default, and .select("+password") temporarily includes it only when absolutely needed.
+    const user = await User.findOne({ emailId: emailId }).select("+password"); //returns the single object that contains the document
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
+    }
+
+    // ✅ Successful login
+    console.log("Hi logged in");
+
+    // creating the jwt token -> jwt.sign({hiding part inside the token that can be user id or anything}"JWT_SECRET_KEY");
+
+    const token = jwt.sign({ _id: user._id }, "Dev@Tinder790");
+    console.log(token);
+
+    res.cookie("token", token); //sends the token wrapped inside the cookie
+    return res.status(200).json({
+      message: "Login successful",
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailId: user.emailId,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+      // error: err.message,
+    });
+  }
+});
+
+app.get("/profile", async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    // console.log(token);
+
+    if (!token)
+      return res.status(401).json({
+        message: "Token missing",
+      });
+    const decodedToken = jwt.verify(token, "Dev@Tinder790");
+
+    const { _id } = decodedToken;
+    // console.log(_id);
+
+    const user = await User.findById(_id);
+    // console.log(user);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    return res.status(200).json(user);
+  } catch (err) {
+    console.log(err.name);
+    if (err.name == "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
+    res.status(500).json({
+      message: "Error while verifying the token",
     });
   }
 });
