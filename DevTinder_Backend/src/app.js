@@ -6,6 +6,7 @@ const {
   validateSignUpData,
   validateLoginData,
 } = require("./utils/validation.js");
+const { userAuth } = require("./middlewares/auth.js");
 
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
@@ -23,7 +24,7 @@ app.use(express.json()); //this is a middleware in express that allows the serve
 app.use(cookieParser());
 
 app.use((req, res, next) => {
-  console.log("Hi");
+  console.log("Everytime this will be logged on every API call");
   next();
 });
 
@@ -66,7 +67,6 @@ app.post("/signup", async (req, res) => {
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    console.log(hashedPassword);
     //3. Creating new instance of a user model
 
     // const user = new User(req.body); //bad way of creating a new instance
@@ -138,15 +138,20 @@ app.post("/login", async (req, res) => {
       });
     }
 
-    // ✅ Successful login
-    console.log("Hi logged in");
-
     // creating the jwt token -> jwt.sign({hiding part inside the token that can be user id or anything}"JWT_SECRET_KEY");
 
     const token = jwt.sign({ _id: user._id }, "Dev@Tinder790");
-    console.log(token);
 
-    res.cookie("token", token); //sends the token wrapped inside the cookie
+
+    // res.cookie("token", token); -> 
+    // By default:❌ Accessible by JS,❌ Sent over HTTP,❌ Vulnerable to XSS
+    
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    }); //sends the token wrapped inside the cookie
+
     return res.status(200).json({
       message: "Login successful",
       id: user._id,
@@ -162,41 +167,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
-  try {
-    const token = req.cookies?.token;
-    // console.log(token);
-
-    if (!token)
-      return res.status(401).json({
-        message: "Token missing",
-      });
-    const decodedToken = jwt.verify(token, "Dev@Tinder790");
-
-    const { _id } = decodedToken;
-    // console.log(_id);
-
-    const user = await User.findById(_id);
-    // console.log(user);
-
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-    return res.status(200).json(user);
-  } catch (err) {
-    console.log(err.name);
-    if (err.name == "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-    if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token expired" });
-    }
-    res.status(500).json({
-      message: "Error while verifying the token",
-    });
-  }
+app.get("/profile", userAuth, async (req, res) => {
+  const user = req.user;
+  return res.status(200).json(user);
 });
 
 //To get all the users from the database
@@ -239,7 +212,6 @@ app.delete("/user/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    console.log(id);
     const user = await User.findByIdAndDelete(id);
     // User.findByIdAndDelete(condition, options); // It will take 2 parameters where 1st is the condition to find the document and 2nd is options object
     // const user = await User.findByIdAndDelete({id : userId});
