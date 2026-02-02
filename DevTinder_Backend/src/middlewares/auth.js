@@ -24,7 +24,7 @@ const userAuth = async (req, res, next) => {
         message: "User not found",
       });
     }
-    req.user = user;
+    req.user = user; //attaching the user object to the request, so that it can be accessed in get api and to sending the user object
     next(); // this will call next request function
   } catch (err) {
     if (err.name == "JsonWebTokenError") {
