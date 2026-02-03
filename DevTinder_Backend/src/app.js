@@ -148,7 +148,7 @@ app.post("/login", async (req, res) => {
     
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: "strict",
     }); //sends the token wrapped inside the cookie
 
