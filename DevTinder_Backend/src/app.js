@@ -140,12 +140,13 @@ app.post("/login", async (req, res) => {
 
     // creating the jwt token -> jwt.sign({hiding part inside the token that can be user id or anything}"JWT_SECRET_KEY");
 
-    const token = jwt.sign({ _id: user._id }, "Dev@Tinder790");
+    const token = jwt.sign({ _id: user._id }, "Dev@Tinder790", {
+      expiresIn: "30s",
+    });
 
-
-    // res.cookie("token", token); -> 
+    // res.cookie("token", token); ->
     // By default:❌ Accessible by JS,❌ Sent over HTTP,❌ Vulnerable to XSS
-    
+
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
