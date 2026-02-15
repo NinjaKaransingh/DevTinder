@@ -37,7 +37,7 @@ app.post("/signup", async (req, res) => {
   //   firstName: "Karansingh B",
   //   lastName: "Borde",
   //   age: 26,
-  //   password: "Karan@123",
+  //   password: "*********************",
   //   gender: "Male",
   // });
 
