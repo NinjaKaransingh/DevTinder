@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt"); //this package helps to hash the password and verifies the hashed password
 const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
+// const jwt = require("jsonwebtoken");
 const connectDb = require("./config/db.js");
 const User = require("./models/user.js");
 const {
@@ -63,7 +63,7 @@ app.post("/signup", async (req, res) => {
       about,
       skills,
     } = req.body;
-    
+
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     //3. Creating new instance of a user model
@@ -130,7 +130,8 @@ app.post("/login", async (req, res) => {
         message: "Invalid credentials",
       });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.isPasswordValid(password);
     if (!isPasswordValid) {
       return res.status(401).json({
         message: "Invalid credentials",
@@ -139,17 +140,20 @@ app.post("/login", async (req, res) => {
 
     // creating the jwt token -> jwt.sign({hiding part inside the token that can be user id or anything}"JWT_SECRET_KEY");
 
-    const token = jwt.sign({ _id: user._id }, "Dev@Tinder790", {
-      expiresIn: "30s",
-    });
+    // const token = jwt.sign({ _id: user._id }, "Dev@Tinder790", {
+    //   expiresIn: "30s",
+    // });
+
+    const token = user.getJWT();
 
     // res.cookie("token", token); ->
     // By default:❌ Accessible by JS,❌ Sent over HTTP,❌ Vulnerable to XSS
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
+      // secure: true, //in production
       sameSite: "strict",
+      expires: new Date(Date.now() + 8 * 3600000), //expires in 8 days
     }); //sends the token wrapped inside the cookie
 
     return res.status(200).json({
@@ -160,10 +164,10 @@ app.post("/login", async (req, res) => {
       emailId: user.emailId,
     });
   } catch (err) {
-    if(err.name === "TypeError"){
+    if (err.name === "TypeError") {
       return res.status(500).json({
-        err : "Email Id and Password is required"
-      })
+        err: "Email Id and Password is required",
+      });
     }
     res.status(500).json({
       message: err.message,
